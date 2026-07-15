@@ -1,0 +1,57 @@
+name: Pending Medicare Enrollment Data
+description: Download behavioral-health NPIs newly present in CMS pending Medicare enrollment files, with a free no-token preview.
+author: ActableSite
+
+branding:
+  icon: activity
+  color: green
+
+inputs:
+  apify-token:
+    description: Apify API token for a paid full edition. Not needed for the free preview.
+    required: false
+    default: ""
+  states:
+    description: Optional comma-separated state or territory codes, such as CA,TX,WA.
+    required: false
+    default: ""
+  preview:
+    description: Download the current public 10-row preview without starting or charging an Apify run.
+    required: false
+    default: "true"
+  max-total-charge-usd:
+    description: Hard cap for a complete Apify run. Full editions require at least 12.25.
+    required: false
+    default: "0.10"
+  output-file:
+    description: JSON file written inside the workflow workspace.
+    required: false
+    default: pending-medicare-behavioral-health.json
+
+outputs:
+  record-count:
+    description: Number of records written to the output file.
+    value: ${{ steps.run.outputs.record-count }}
+  output-file:
+    description: Path to the JSON output file.
+    value: ${{ steps.run.outputs.output-file }}
+  current-snapshot:
+    description: Current CMS pending-enrollment snapshot date for a free preview.
+    value: ${{ steps.run.outputs.current-snapshot }}
+  prior-snapshot:
+    description: Prior CMS pending-enrollment snapshot date for a free preview.
+    value: ${{ steps.run.outputs.prior-snapshot }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      name: Export current pending Medicare data
+      shell: bash
+      env:
+        APIFY_TOKEN: ${{ inputs.apify-token }}
+        STATES: ${{ inputs.states }}
+        PREVIEW: ${{ inputs.preview }}
+        MAX_TOTAL_CHARGE_USD: ${{ inputs.max-total-charge-usd }}
+        OUTPUT_FILE: ${{ inputs.output-file }}
+      run: '"$GITHUB_ACTION_PATH/scripts/run-actor.sh"'

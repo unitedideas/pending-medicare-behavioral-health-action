@@ -1,0 +1,31 @@
+name: Production preview
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 15 * * 2,5"
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - id: applicants
+        uses: unitedideas/pending-medicare-behavioral-health-action@v1
+        with:
+          states: CA,TX
+          output-file: pending-medicare-behavioral-health.json
+      - name: Verify delivered preview
+        env:
+          RECORD_COUNT: ${{ steps.applicants.outputs.record-count }}
+          OUTPUT_FILE: ${{ steps.applicants.outputs.output-file }}
+          CURRENT_SNAPSHOT: ${{ steps.applicants.outputs.current-snapshot }}
+          PRIOR_SNAPSHOT: ${{ steps.applicants.outputs.prior-snapshot }}
+        run: |
+          test "$RECORD_COUNT" -ge 1
+          test "$OUTPUT_FILE" = "pending-medicare-behavioral-health.json"
+          test -n "$CURRENT_SNAPSHOT"
+          test -n "$PRIOR_SNAPSHOT"
+          jq -e --argjson expected "$RECORD_COUNT" 'type == "array" and length == $expected and all(.[]; .state == "CA" or .state == "TX")' "$OUTPUT_FILE"
